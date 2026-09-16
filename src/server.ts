@@ -1,3 +1,6 @@
+import { patchAndImportTools } from './tools/patch-and-import-schemas.js';
+import { handleApplyPatch, handleImportFile } from './tools/patch-and-import.js';
+import { redactFileInput } from './utils/redact-file-input.js';
 import path from 'path';
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import {
@@ -304,6 +307,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 
         // Build complete tools array
         const allTools = [
+            ...patchAndImportTools,
             // Configuration tools
             {
                 name: "get_config",
@@ -645,8 +649,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                         USE searchType="content" WHEN:
                         - User asks about code/logic: "authentication logic", "error handling", "API calls"
                         - Looking for functions/variables: "getUserData function", "useState hook"
-                        - Searching for text/comments: "TODO items", "FIXME comments", "documentation"
-                        - Finding patterns in code: "console.log statements", "import statements"
+                        - Searching for text/comments: "TODO items", "FIXME comments", "console.log statements"
                         - User describes functionality: "components that handle login", "files with database queries"
                         
                         WHEN UNSURE OR USER REQUEST IS AMBIGUOUS:
@@ -678,7 +681,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                         - literalSearch: Use exact string matching instead of regex (default: false)
                         - filePattern: Optional filter to limit search to specific file types (e.g., "*.js", "package.json")
                         - ignoreCase: Case-insensitive search (default: true). Works for both file names and content.
-                        - earlyTermination: Stop search early when exact filename match is found (optional: defaults to true for file searches, false for content searches)
+                        - earlyTermination: Stop search early when exact filename match is found (optional: defaults to true for files, false for content)
                         
                         DECISION EXAMPLES:
                         - "find package.json" → searchType="files", pattern="package.json" (specific file)
@@ -722,7 +725,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                         
                         Supports partial result reading with:
                         - 'offset' (start result index, default: 0)
-                          * Positive: Start from result N (0-based indexing)
+                          * Positive: Start from line N (0-based indexing)
                           * Negative: Read last N results from end (tail behavior)
                         - 'length' (max results to read, default: 100)
                           * Used with positive offsets for range reading
@@ -1321,12 +1324,18 @@ async function handleCallToolRequest(request: CallToolRequest): Promise<ServerRe
         }
 
         // Track tool call
-        trackToolCall(name, args);
+        trackToolCall(name, redactFileInput(name, args));
 
         // Using a more structured approach with dedicated handlers
         // (result is declared above so the finally block can read execution status)
 
         switch (name) {
+            case 'apply_patch':
+                result = await handleApplyPatch(args);
+                break;
+            case 'import_file':
+                result = await handleImportFile(args);
+                break;
             // Config tools
             case "get_config":
                 try {
@@ -1547,7 +1556,7 @@ async function handleCallToolRequest(request: CallToolRequest): Promise<ServerRe
         ];
 
         if (!EXCLUDED_TOOLS.includes(name)) {
-            toolHistory.addCall(name, args, result, duration);
+            toolHistory.addCall(name, redactFileInput(name, args), result, duration);
         }
 
         // Track success or failure based on result

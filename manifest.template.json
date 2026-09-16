@@ -36,6 +36,14 @@
   },
   "tools": [
     {
+      "name": "apply_patch",
+      "description": "Apply OpenAI/Codex-format text patches on the MCP host."
+    },
+    {
+      "name": "import_file",
+      "description": "Import an authorized ChatGPT file to the MCP host with streaming and SHA-256 verification."
+    },
+    {
       "name": "get_config",
       "description": "Get the complete server configuration including blocked commands, allowed directories, file limits, telemetry settings, client info, and system information."
     },

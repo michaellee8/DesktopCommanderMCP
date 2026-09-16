@@ -1,3 +1,4 @@
+import { patchAndImportSchemas } from "./patch-and-import-schemas.js";
 import { z } from "zod";
 
 // Config tools schemas
@@ -182,7 +183,7 @@ export const GetUsageStatsArgsSchema = z.object({});
 
 // Feedback tool schema - no pre-filled parameters, all user input
 export const GiveFeedbackArgsSchema = z.object({
-  // No parameters needed - form will be filled manually by user
+  // No parameters needed - just open form
   // Only auto-filled hidden fields remain:
   // - tool_call_count (auto)
   // - days_using (auto) 
@@ -247,6 +248,7 @@ export const TrackUiEventArgsSchema = z.object({
  * with the tool definitions in server.ts.
  */
 export const toolArgSchemas: Record<string, z.ZodTypeAny> = {
+  ...patchAndImportSchemas,
   get_config: GetConfigArgsSchema,
   set_config_value: SetConfigValueArgsSchema,
   read_file: ReadFileArgsSchema,

@@ -1,3 +1,4 @@
+import { redactFileInput } from '../utils/redact-file-input.js';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs/promises';
@@ -223,7 +224,7 @@ export class DesktopCommanderIntegration {
 
         // Proxy other tools to MCP server
         try {
-            console.debug('[DEBUG] Calling MCP tool:', toolName, 'args:', JSON.stringify(args).substring(0, 100));
+            console.debug('[DEBUG] Calling MCP tool:', toolName, 'args:', JSON.stringify(redactFileInput(toolName, args)).substring(0, 100));
             const result = await this.mcpClient!.callTool({
                 name: toolName,
                 arguments: args,
